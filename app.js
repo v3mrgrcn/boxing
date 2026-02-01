@@ -1048,6 +1048,7 @@ function stopFreeTimer() {
 function runFreePrepare() {
     state.freeState = 'prepare';
     elements.freeTimerLabel.textContent = 'HAZIRLAN';
+    elements.freeRoundLabel.textContent = '';
     let countdown = 3;
     elements.freeTimerValue.textContent = formatTime(countdown);
 

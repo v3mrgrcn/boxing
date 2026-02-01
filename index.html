@@ -142,7 +142,6 @@
             <section id="free-tab" class="tab-content">
                 <header class="header">
                     <h1>⏱️ Serbest Sayaç</h1>
-                    <p class="subtitle">Sadece Zaman, Kombo Yok</p>
                 </header>
 
                 <div class="settings-panel active" style="margin-top: 0; box-shadow: none; background: transparent;">
@@ -152,7 +151,10 @@
                             <option value="60">1 dk</option>
                             <option value="120">2 dk</option>
                             <option value="180" selected>3 dk</option>
+                            <option value="240">4 dk</option>
                             <option value="300">5 dk</option>
+                            <option value="420">7 dk</option>
+                            <option value="600">10 dk</option>
                         </select>
                     </div>
                     <div class="setting-row">
@@ -161,15 +163,23 @@
                             <option value="15">15 sn</option>
                             <option value="30">30 sn</option>
                             <option value="60" selected>1 dk</option>
+                            <option value="90">1.5 dk</option>
+                            <option value="120">2 dk</option>
                         </select>
                     </div>
                     <div class="setting-row">
                         <label>Round Sayısı</label>
                         <select id="free-round-count">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
                             <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
                             <option value="6" selected>6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
                             <option value="9">9</option>
-                            <option value="12">12</option>
+                            <option value="10">10</option>
                         </select>
                     </div>
                 </div>
@@ -178,7 +188,7 @@
                     <div class="free-timer-container">
                         <div id="free-timer-label">HAZIRLAN</div>
                         <div id="free-timer-value">00:00</div>
-                        <div id="free-round-label">Round 0 / 6</div>
+                        <div id="free-round-label"></div>
                     </div>
                 </div>
 

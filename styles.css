@@ -367,7 +367,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
+    padding: 12px 10px;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -548,6 +548,7 @@ body {
 /* === Tab Content Logic === */
 .tab-content {
     display: none;
+    padding: 0 16px;
     animation: fadeIn var(--transition-normal);
 }
 
@@ -852,7 +853,7 @@ body {
 }
 
 #free-timer-value {
-    font-size: 8rem;
+    font-size: clamp(4rem, 20vw, 7rem);
     font-weight: 900;
     color: var(--text-primary);
     line-height: 1;
