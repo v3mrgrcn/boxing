@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shadow Boxing - Antrenman ve Nefes</title>
+    <meta name="description" content="Shadow Boxing antrenman zamanlayıcı ve nefes egzersizleri uygulaması">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- PWA için iOS desteği -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Main Content Area -->
+        <main class="app-container">
+            <!-- Training Tab -->
+            <section id="training-tab" class="tab-content active">
+                <header class="header">
+                    <h1>🥊 Shadow Boxing</h1>
+                    <p class="subtitle">Antrenman Zamanlayıcı</p>
+                </header>
+
+                <!-- Timer Display -->
+                <div class="timer-section">
+                    <div class="state-badge" id="state-badge">HAZIR</div>
+                    <div class="timer-ring">
+                        <svg class="progress-ring" viewBox="0 0 200 200">
+                            <circle class="progress-ring-bg" cx="100" cy="100" r="90" />
+                            <circle class="progress-ring-fill" id="progress-ring" cx="100" cy="100" r="90" />
+                        </svg>
+                        <div class="timer-inner">
+                            <div class="timer-display" id="timer-display">00:00</div>
+                            <div class="round-info">
+                                <span>Round</span>
+                                <span id="round-counter">0 / 6</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Combo Display -->
+                <div class="combo-section" id="combo-section">
+                    <div class="combo-label">KOMBO</div>
+                    <div class="combo-display" id="combo-display">--</div>
+                    <div class="combo-hint" id="combo-hint"></div>
+                </div>
+
+                <!-- Settings Panel (Collapsible) -->
+                <details class="settings-panel" id="settings-panel">
+                    <summary class="settings-toggle">
+                        <span>⚙️ Ayarlar</span>
+                        <span class="toggle-icon">▼</span>
+                    </summary>
+                    <div class="settings-content">
+                        <div class="setting-group">
+                            <label>Zorluk</label>
+                            <div class="segmented-control" id="difficulty-control">
+                                <button class="segment" data-value="easy">Kolay</button>
+                                <button class="segment active" data-value="medium">Orta</button>
+                                <button class="segment" data-value="hard">Zor</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <label>Round Süresi</label>
+                            <select id="round-duration">
+                                <option value="60">1 dk</option>
+                                <option value="120">2 dk</option>
+                                <option value="180" selected>3 dk</option>
+                                <option value="240">4 dk</option>
+                                <option value="300">5 dk</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <label>Mola Süresi</label>
+                            <select id="rest-duration">
+                                <option value="30">30 sn</option>
+                                <option value="45">45 sn</option>
+                                <option value="60" selected>1 dk</option>
+                                <option value="90">1.5 dk</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <label>Round Sayısı</label>
+                            <select id="round-count">
+                                <option value="3">3</option>
+                                <option value="6" selected>6</option>
+                                <option value="9">9</option>
+                                <option value="12">12</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label>Anons Modu</label>
+                            <div class="segmented-control" id="announce-control">
+                                <button class="segment active" data-value="number">Sayı</button>
+                                <button class="segment" data-value="name">İsim</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <label>Kombo Aralığı</label>
+                            <select id="combo-interval">
+                                <option value="4">4 sn</option>
+                                <option value="6" selected>6 sn</option>
+                                <option value="8">8 sn</option>
+                                <option value="10">10 sn</option>
+                            </select>
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Control Buttons -->
+                <div class="controls">
+                    <button class="btn btn-icon" id="btn-resync" title="Süreyi Sıfırla" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 4v6h6M23 20v-6h-6" />
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                        </svg>
+                    </button>
+                    <button class="btn btn-primary btn-large" id="btn-play">
+                        <span class="btn-icon-inner" id="play-icon">▶</span>
+                        <span id="play-text">Başlat</span>
+                    </button>
+                    <button class="btn btn-icon btn-danger" id="btn-stop" title="Durdur" disabled>
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12" rx="2" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Breathing Tab -->
+            <section id="breathing-tab" class="tab-content">
+                <header class="header">
+                    <h1>🧘 Nefes Egzersizi</h1>
+                    <p class="subtitle">Rahatlama ve Odaklanma</p>
+                </header>
+
+                <!-- Breathing Ring -->
+                <div class="breathing-section">
+                    <div class="breathing-ring" id="breathing-ring">
+                        <div class="ring-pulse"></div>
+                        <div class="ring-inner">
+                            <span class="breath-phase" id="breath-phase">Hazır</span>
+                            <span class="breath-timer" id="breath-timer">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise Selection -->
+                <div class="exercise-cards">
+                    <button class="exercise-card active" data-exercise="box">
+                        <div class="card-icon">📦</div>
+                        <div class="card-title">Box</div>
+                        <div class="card-desc">4-4-4-4</div>
+                    </button>
+                    <button class="exercise-card" data-exercise="478">
+                        <div class="card-icon">🌙</div>
+                        <div class="card-title">4-7-8</div>
+                        <div class="card-desc">Uyku</div>
+                    </button>
+                    <button class="exercise-card" data-exercise="resonant">
+                        <div class="card-icon">🌊</div>
+                        <div class="card-title">Resonant</div>
+                        <div class="card-desc">5-5</div>
+                    </button>
+                </div>
+
+                <!-- Cycle Settings -->
+                <div class="cycle-settings">
+                    <label>Döngü Sayısı</label>
+                    <div class="cycle-stepper">
+                        <button class="stepper-btn" id="cycle-minus">−</button>
+                        <span id="cycle-count">5</span>
+                        <button class="stepper-btn" id="cycle-plus">+</button>
+                    </div>
+                </div>
+
+                <!-- Cycle Counter -->
+                <div class="cycle-info">
+                    <div class="cycle-progress">
+                        <span>Döngü</span>
+                        <span id="cycle-counter">0 / 5</span>
+                    </div>
+                    <div class="cycle-bar">
+                        <div class="cycle-bar-fill" id="cycle-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Breathing Controls -->
+                <div class="controls">
+                    <button class="btn btn-primary btn-large btn-wide" id="btn-breath-start">
+                        <span class="btn-icon-inner">▶</span>
+                        <span>Başlat</span>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Tab Bar -->
+        <nav class="tab-bar">
+            <button class="tab-item active" data-tab="training">
+                <span class="tab-icon">🥊</span>
+                <span class="tab-label">Antrenman</span>
+            </button>
+            <button class="tab-item" data-tab="breathing">
+                <span class="tab-icon">🧘</span>
+                <span class="tab-label">Nefes</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
