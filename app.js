@@ -165,6 +165,7 @@ const state = {
     comboInterval: null,
     difficulty: 'medium',
     comboIntervalMs: 6000,
+    voiceEnabled: true,
     lastCombo: [],
 
     // Breathing
@@ -222,6 +223,7 @@ const elements = {
 
     // Settings
     difficultyControl: document.getElementById('difficulty-control'),
+    voiceControl: document.getElementById('voice-control'),
     roundDuration: document.getElementById('round-duration'),
     restDuration: document.getElementById('rest-duration'),
     roundCount: document.getElementById('round-count'),
@@ -273,6 +275,10 @@ function setupSegmentedControl(container, callback) {
 
 setupSegmentedControl(elements.difficultyControl, (value) => {
     state.difficulty = value;
+});
+
+setupSegmentedControl(elements.voiceControl, (value) => {
+    state.voiceEnabled = (value === 'on');
 });
 
 // === Utility Functions ===
@@ -394,7 +400,9 @@ function generateCombo() {
     elements.comboSection.classList.add('active');
 
     // Play audio sequence
-    playComboAudio(combo);
+    if (state.voiceEnabled) {
+        playComboAudio(combo);
+    }
 
     HapticManager.medium();
 }
@@ -434,7 +442,7 @@ function updateTimer() {
         const prevSecond = Math.floor(remaining + 0.05);
 
         // Play countdown sounds
-        if (currentSecond !== prevSecond && currentSecond <= 10 && currentSecond >= 1) {
+        if (state.voiceEnabled && currentSecond !== prevSecond && currentSecond <= 10 && currentSecond >= 1) {
             if (currentSecond === 10) {
                 audioManager.play('last_10_seconds.mp3', true);
             } else if (currentSecond <= 3) {
@@ -505,11 +513,13 @@ function startWorkPhase() {
     state.endDate = Date.now() + state.roundDuration * 1000;
 
     // Play bell and round announcement
-    audioManager.play('bell_start.mp3', true);
-    setTimeout(() => {
-        const roundAudio = `round_${state.currentRound}.mp3`;
-        audioManager.play(roundAudio, true);
-    }, 800);
+    if (state.voiceEnabled) {
+        audioManager.play('bell_start.mp3', true);
+        setTimeout(() => {
+            const roundAudio = `round_${state.currentRound}.mp3`;
+            audioManager.play(roundAudio, true);
+        }, 800);
+    }
 
     // Start combo generation after short delay
     setTimeout(() => {
@@ -526,7 +536,15 @@ function startWorkPhase() {
 function startComboInterval() {
     clearInterval(state.comboInterval);
 
-    state.comboIntervalMs = parseInt(elements.comboIntervalSelect.value) * 1000;
+    let intervalSec = parseInt(elements.comboIntervalSelect.value);
+
+    // Auto-adjust for Hard difficulty if interval is too short
+    if (state.difficulty === 'hard' && intervalSec < 8) {
+        intervalSec = 8;
+        console.log('🥊 Hard mode detected: Combo interval adjusted to 8s to prevent overlap.');
+    }
+
+    state.comboIntervalMs = intervalSec * 1000;
     const randomVariance = () => Math.random() * 2000 - 1000; // ±1 second
 
     state.comboInterval = setInterval(() => {
@@ -555,10 +573,12 @@ function startRestPhase() {
     state.endDate = Date.now() + state.restDuration * 1000;
 
     // Play bell end and rest announcement
-    audioManager.play('bell_end.mp3', true);
-    setTimeout(() => {
-        audioManager.play('rest.mp3', true);
-    }, 600);
+    if (state.voiceEnabled) {
+        audioManager.play('bell_end.mp3', true);
+        setTimeout(() => {
+            audioManager.play('rest.mp3', true);
+        }, 600);
+    }
 }
 
 function finishWorkout() {
@@ -566,7 +586,7 @@ function finishWorkout() {
 
     elements.stateBadge.textContent = 'BİTTİ!';
     elements.stateBadge.className = 'state-badge';
-    elements.comboDisplay.textContent = '🎉 Tebrikler!';
+    elements.comboDisplay.textContent = '🥊 Başardınız!';
     elements.comboHint.textContent = `${state.totalRounds} round tamamlandı`;
     elements.comboSection.classList.remove('active');
     elements.timerDisplay.classList.remove('warning');
@@ -579,13 +599,15 @@ function finishWorkout() {
     elements.playText.textContent = 'Yeniden';
 
     // Play bell, workout complete, then victory sound
-    audioManager.play('bell_end.mp3', true);
-    setTimeout(() => {
-        audioManager.play('workout_complete.mp3', true);
+    if (state.voiceEnabled) {
+        audioManager.play('bell_end.mp3', true);
         setTimeout(() => {
-            audioManager.play('victory.mp3', false);
-        }, 1500);
-    }, 600);
+            audioManager.play('workout_complete.mp3', true);
+            setTimeout(() => {
+                audioManager.play('victory.mp3', false);
+            }, 1500);
+        }, 600);
+    }
 
     HapticManager.success();
     releaseWakeLock();
