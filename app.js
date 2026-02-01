@@ -173,7 +173,20 @@ const state = {
     currentExercise: 'box',
     currentCycle: 0,
     totalCycles: 5,
-    breathInterval: null
+    breathInterval: null,
+
+    // Streak & Progress
+    completions: [],
+    currentStreak: 0,
+    totalWorkouts: 0,
+
+    // Free Timer
+    freeTimerActive: false,
+    freeRound: 0,
+    freeTotalRounds: 6,
+    freeRoundDuration: 180,
+    freeRestDuration: 60,
+    freeState: 'idle' // idle, prepare, work, rest
 };
 
 // === Initialize Audio Manager ===
@@ -239,7 +252,25 @@ const elements = {
     btnBreathStart: document.getElementById('btn-breath-start'),
     exerciseCards: document.querySelectorAll('.exercise-card'),
     cycleMinus: document.getElementById('cycle-minus'),
-    cyclePlus: document.getElementById('cycle-plus')
+    cyclePlus: document.getElementById('cycle-plus'),
+
+    // Free Timer
+    freeRoundDuration: document.getElementById('free-round-duration'),
+    freeRestDuration: document.getElementById('free-rest-duration'),
+    freeRoundCount: document.getElementById('free-round-count'),
+    btnFreeStart: document.getElementById('btn-free-start'),
+    btnFreeStop: document.getElementById('btn-free-stop'),
+    freeDisplay: document.getElementById('free-display'),
+    freeTimerValue: document.getElementById('free-timer-value'),
+    freeTimerLabel: document.getElementById('free-timer-label'),
+    freeRoundLabel: document.getElementById('free-round-label'),
+    freePlayIcon: document.getElementById('free-play-icon'),
+    freePlayText: document.getElementById('free-play-text'),
+
+    // Progress
+    streakGrid: document.getElementById('streak-grid'),
+    statStreak: document.getElementById('stat-current-streak'),
+    statTotal: document.getElementById('stat-total-workouts')
 };
 
 // === Progress Ring Constants ===
@@ -255,6 +286,10 @@ elements.tabItems.forEach(item => {
 
         item.classList.add('active');
         document.getElementById(`${tabName}-tab`).classList.add('active');
+
+        if (tabName === 'progress') {
+            renderStreakGrid();
+        }
 
         HapticManager.light();
     });
@@ -611,6 +646,7 @@ function finishWorkout() {
 
     HapticManager.success();
     releaseWakeLock();
+    saveWorkoutCompletion();
 }
 
 function pauseWorkout() {
@@ -896,8 +932,234 @@ function init() {
 
     // Setup audio cache button
     setupAudioCacheButton();
+    loadStreakData();
 
     console.log('🥊 Shadow Boxing App initialized');
+}
+
+
+// === Streak & Progress Management ===
+function saveWorkoutCompletion() {
+    const today = new Date().toISOString().split('T')[0];
+    if (!state.completions.includes(today)) {
+        state.completions.push(today);
+        localStorage.setItem('shadowboxing_completions', JSON.stringify(state.completions));
+        calculateStreak();
+    }
+}
+
+function loadStreakData() {
+    const saved = localStorage.getItem('shadowboxing_completions');
+    if (saved) {
+        state.completions = JSON.parse(saved);
+        calculateStreak();
+    }
+}
+
+function calculateStreak() {
+    if (state.completions.length === 0) {
+        state.currentStreak = 0;
+        state.totalWorkouts = 0;
+        return;
+    }
+
+    state.totalWorkouts = state.completions.length;
+
+    const sortedDates = [...state.completions].sort().reverse();
+    let streak = 0;
+    let todayValue = new Date();
+    todayValue.setHours(0, 0, 0, 0);
+
+    let lastDate = new Date(sortedDates[0]);
+    lastDate.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((todayValue - lastDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 1) {
+        streak = 1;
+        for (let i = 1; i < sortedDates.length; i++) {
+            const current = new Date(sortedDates[i]);
+            const prev = new Date(sortedDates[i - 1]);
+            current.setHours(0, 0, 0, 0);
+            prev.setHours(0, 0, 0, 0);
+
+            const diff = Math.floor((prev - current) / (1000 * 60 * 60 * 24));
+            if (diff === 1) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+    }
+
+    state.currentStreak = streak;
+    if (elements.statStreak) elements.statStreak.textContent = state.currentStreak;
+    if (elements.statTotal) elements.statTotal.textContent = state.totalWorkouts;
+}
+
+function renderStreakGrid() {
+    if (!elements.streakGrid) return;
+    elements.streakGrid.innerHTML = '';
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const monthPrefix = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${monthPrefix}-${d.toString().padStart(2, '0')}`;
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'streak-day';
+        if (state.completions.includes(dateStr)) dayDiv.classList.add('completed');
+        if (dateStr === new Date().toISOString().split('T')[0]) dayDiv.classList.add('today');
+        dayDiv.textContent = d;
+        elements.streakGrid.appendChild(dayDiv);
+    }
+}
+
+// === Free Timer Logic ===
+function startFreeTimer() {
+    state.freeTimerActive = true;
+    state.freeRound = 0;
+    state.freeTotalRounds = parseInt(elements.freeRoundCount.value);
+    state.freeRoundDuration = parseInt(elements.freeRoundDuration.value);
+    state.freeRestDuration = parseInt(elements.freeRestDuration.value);
+
+    elements.freeDisplay.style.display = 'block';
+    document.querySelector('#free-tab .settings-panel').style.display = 'none';
+    elements.btnFreeStop.style.display = 'block';
+    elements.freePlayText.textContent = 'Durdur';
+    elements.freePlayIcon.textContent = '⏹';
+
+    runFreePrepare();
+    requestWakeLock();
+}
+
+function stopFreeTimer() {
+    state.freeTimerActive = false;
+    clearInterval(state.freeInterval);
+    elements.freeDisplay.style.display = 'none';
+    document.querySelector('#free-tab .settings-panel').style.display = 'block';
+    elements.btnFreeStop.style.display = 'none';
+    elements.freePlayText.textContent = 'Başlat';
+    elements.freePlayIcon.textContent = '▶';
+    document.body.classList.remove('flash-work', 'flash-rest');
+    releaseWakeLock();
+}
+
+function runFreePrepare() {
+    state.freeState = 'prepare';
+    elements.freeTimerLabel.textContent = 'HAZIRLAN';
+    let countdown = 3;
+    elements.freeTimerValue.textContent = formatTime(countdown);
+
+    if (state.voiceEnabled) audioManager.play('get_ready.mp3', true);
+
+    state.freeInterval = setInterval(() => {
+        countdown--;
+        if (countdown >= 0) {
+            elements.freeTimerValue.textContent = formatTime(countdown);
+        }
+        if (countdown <= 0) {
+            clearInterval(state.freeInterval);
+            runFreeWork();
+        }
+    }, 1000);
+}
+
+function runFreeWork() {
+    state.freeState = 'work';
+    state.freeRound++;
+    elements.freeRoundLabel.textContent = `Round ${state.freeRound} / ${state.freeTotalRounds}`;
+    elements.freeTimerLabel.textContent = 'ÇALIŞ!';
+    document.body.classList.add('flash-work');
+
+    let remaining = state.freeRoundDuration;
+    elements.freeTimerValue.textContent = formatTime(remaining);
+
+    if (state.voiceEnabled) {
+        audioManager.play('bell_start.mp3', true);
+        setTimeout(() => {
+            if (state.freeTimerActive && state.freeState === 'work') {
+                audioManager.play(`round_${state.freeRound}.mp3`, true);
+            }
+        }, 800);
+    }
+
+    state.freeInterval = setInterval(() => {
+        remaining--;
+        if (remaining >= 0) {
+            elements.freeTimerValue.textContent = formatTime(remaining);
+        }
+
+        if (remaining <= 10 && remaining > 0 && state.voiceEnabled) {
+            if (remaining === 10) audioManager.play('last_10_seconds.mp3', true);
+            else if (remaining <= 3) audioManager.play(`${remaining}.mp3`, true);
+            else audioManager.play('beep.mp3', true);
+        }
+
+        if (remaining <= 0) {
+            clearInterval(state.freeInterval);
+            document.body.classList.remove('flash-work');
+            if (state.freeRound < state.freeTotalRounds) runFreeRest();
+            else finishFreeWorkout();
+        }
+    }, 1000);
+}
+
+function runFreeRest() {
+    state.freeState = 'rest';
+    elements.freeTimerLabel.textContent = 'MOLA';
+    document.body.classList.add('flash-rest');
+
+    let remaining = state.freeRestDuration;
+    elements.freeTimerValue.textContent = formatTime(remaining);
+
+    if (state.voiceEnabled) {
+        audioManager.play('bell_end.mp3', true);
+        setTimeout(() => {
+            if (state.freeTimerActive && state.freeState === 'rest') {
+                audioManager.play('rest.mp3', true);
+            }
+        }, 600);
+    }
+
+    state.freeInterval = setInterval(() => {
+        remaining--;
+        if (remaining >= 0) {
+            elements.freeTimerValue.textContent = formatTime(remaining);
+        }
+        if (remaining <= 0) {
+            clearInterval(state.freeInterval);
+            document.body.classList.remove('flash-rest');
+            runFreeWork();
+        }
+    }, 1000);
+}
+
+function finishFreeWorkout() {
+    elements.freeTimerLabel.textContent = 'BİTTİ!';
+    elements.freeTimerValue.textContent = '🥊';
+
+    if (state.voiceEnabled) {
+        audioManager.play('bell_end.mp3', true);
+        setTimeout(() => audioManager.play('workout_complete.mp3', true), 600);
+    }
+
+    saveWorkoutCompletion();
+    setTimeout(() => {
+        if (state.freeTimerActive) stopFreeTimer();
+    }, 5000);
+}
+
+// === Event Listeners for Free Timer ===
+if (elements.btnFreeStart) {
+    elements.btnFreeStart.addEventListener('click', () => {
+        audioManager.init();
+        if (!state.freeTimerActive) startFreeTimer();
+        else stopFreeTimer();
+    });
+}
+if (elements.btnFreeStop) {
+    elements.btnFreeStop.addEventListener('click', stopFreeTimer);
 }
 
 // === PWA Service Worker Registration ===

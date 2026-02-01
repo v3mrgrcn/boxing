@@ -545,8 +545,30 @@ body {
     color: var(--text-secondary);
 }
 
+/* === Tab Content Logic === */
+.tab-content {
+    display: none;
+    animation: fadeIn var(--transition-normal);
+}
+
+.tab-content.active {
+    display: block;
+}
+
 .tab-item.active {
     color: var(--accent-primary);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .tab-icon {
@@ -811,8 +833,141 @@ body {
     z-index: 100;
 }
 
-.install-banner.show {
+/* === Free Timer Tab === */
+.free-timer-container {
+    padding: 60px 20px;
+    text-align: center;
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    border: 2px solid var(--border-color);
+    margin: 20px 0;
+}
+
+#free-timer-label {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+}
+
+#free-timer-value {
+    font-size: 8rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 20px;
+    font-variant-numeric: tabular-nums;
+}
+
+#free-round-label {
+    font-size: 1.25rem;
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+/* Flash Animation for work phase */
+.flash-work #free-timer-value {
+    animation: flash-red 1s infinite alternate;
+}
+
+@keyframes flash-red {
+    from {
+        color: var(--text-primary);
+        text-shadow: none;
+    }
+
+    to {
+        color: #ff2d55;
+        text-shadow: 0 0 40px rgba(255, 45, 85, 0.6);
+    }
+}
+
+/* Flash Animation for rest phase */
+.flash-rest #free-timer-value {
+    animation: flash-green 1s infinite alternate;
+}
+
+@keyframes flash-green {
+    from {
+        color: var(--text-primary);
+        text-shadow: none;
+    }
+
+    to {
+        color: #2ed573;
+        text-shadow: 0 0 40px rgba(46, 213, 115, 0.6);
+    }
+}
+
+/* === Progress Tab === */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    padding: 24px 16px;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.stat-value {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.streak-calendar-section {
+    background: var(--bg-card);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.streak-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.streak-day {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-color);
     display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.streak-day.completed {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #000;
+    font-weight: 800;
+    box-shadow: 0 0 15px var(--accent-primary);
+}
+
+.streak-day.today {
+    border-color: var(--accent-orange);
+    color: var(--accent-orange);
 }
 
 /* === Settings Tab Styles === */

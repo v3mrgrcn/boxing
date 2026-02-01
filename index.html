@@ -138,6 +138,85 @@
                 </div>
             </section>
 
+            <!-- Free Timer Tab -->
+            <section id="free-tab" class="tab-content">
+                <header class="header">
+                    <h1>⏱️ Serbest Sayaç</h1>
+                    <p class="subtitle">Sadece Zaman, Kombo Yok</p>
+                </header>
+
+                <div class="settings-panel active" style="margin-top: 0; box-shadow: none; background: transparent;">
+                    <div class="setting-row">
+                        <label>Round Süresi</label>
+                        <select id="free-round-duration">
+                            <option value="60">1 dk</option>
+                            <option value="120">2 dk</option>
+                            <option value="180" selected>3 dk</option>
+                            <option value="300">5 dk</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Mola Süresi</label>
+                        <select id="free-rest-duration">
+                            <option value="15">15 sn</option>
+                            <option value="30">30 sn</option>
+                            <option value="60" selected>1 dk</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label>Round Sayısı</label>
+                        <select id="free-round-count">
+                            <option value="3">3</option>
+                            <option value="6" selected>6</option>
+                            <option value="9">9</option>
+                            <option value="12">12</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="main-display" id="free-display" style="display: none;">
+                    <div class="free-timer-container">
+                        <div id="free-timer-label">HAZIRLAN</div>
+                        <div id="free-timer-value">00:00</div>
+                        <div id="free-round-label">Round 0 / 6</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary btn-large btn-wide" id="btn-free-start">
+                        <span class="btn-icon-inner" id="free-play-icon">▶</span>
+                        <span id="free-play-text">Başlat</span>
+                    </button>
+                    <button class="btn btn-secondary btn-wide" id="btn-free-stop" style="display: none;">Durdur</button>
+                </div>
+            </section>
+
+            <!-- Progress Tab -->
+            <section id="progress-tab" class="tab-content">
+                <header class="header">
+                    <h1>🔥 Gelişimim</h1>
+                    <p class="subtitle">Antrenman Serisi</p>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-current-streak">0</span>
+                        <span class="stat-label">Günlük Seri</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-total-workouts">0</span>
+                        <span class="stat-label">Toplam Gün</span>
+                    </div>
+                </div>
+
+                <div class="streak-calendar-section">
+                    <h3 class="settings-section-title">📅 Bu Ay</h3>
+                    <div id="streak-grid" class="streak-grid">
+                        <!-- Circles will be generated here -->
+                    </div>
+                </div>
+            </section>
+
             <!-- Breathing Tab -->
             <section id="breathing-tab" class="tab-content">
                 <header class="header">
@@ -243,7 +322,15 @@
         <nav class="tab-bar">
             <button class="tab-item active" data-tab="training">
                 <span class="tab-icon">🥊</span>
-                <span class="tab-label">Antrenman</span>
+                <span class="tab-label">Kombo</span>
+            </button>
+            <button class="tab-item" data-tab="free">
+                <span class="tab-icon">⏱️</span>
+                <span class="tab-label">Serbest</span>
+            </button>
+            <button class="tab-item" data-tab="progress">
+                <span class="tab-icon">🔥</span>
+                <span class="tab-label">Gelişim</span>
             </button>
             <button class="tab-item" data-tab="breathing">
                 <span class="tab-icon">🧘</span>
