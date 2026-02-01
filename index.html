@@ -13,7 +13,7 @@
     <!-- PWA için iOS desteği -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
 </head>
 
 <body>
@@ -200,6 +200,38 @@
                     </button>
                 </div>
             </section>
+
+            <!-- Settings Tab -->
+            <section id="settings-tab" class="tab-content">
+                <header class="header">
+                    <h1>⚙️ Ayarlar</h1>
+                    <p class="subtitle">Uygulama Tercihleri</p>
+                </header>
+
+                <div class="settings-section">
+                    <h3 class="settings-section-title">📥 Çevrimdışı Mod</h3>
+                    <p class="settings-desc">Ses dosyalarını indirerek internet bağlantısı olmadan kullanın.</p>
+                    <button class="btn btn-secondary btn-wide" id="btn-download-audio">
+                        <span class="btn-icon-inner">📥</span>
+                        <span>Sesleri İndir</span>
+                    </button>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="settings-section-title">📱 Ana Ekrana Ekle</h3>
+                    <p class="settings-desc">Uygulamayı telefonunuzun ana ekranına ekleyerek tam ekran kullanın.</p>
+                    <div class="install-instructions">
+                        <p><strong>iOS:</strong> Safari → Paylaş → Ana Ekrana Ekle</p>
+                        <p><strong>Android:</strong> Chrome → Menü → Ana ekrana ekle</p>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="settings-section-title">ℹ️ Hakkında</h3>
+                    <p class="settings-desc">Shadow Boxing Antrenman v1.0</p>
+                    <p class="settings-desc">Kombolar: ExpertBoxing.com</p>
+                </div>
+            </section>
         </main>
 
         <!-- Tab Bar -->
@@ -211,6 +243,10 @@
             <button class="tab-item" data-tab="breathing">
                 <span class="tab-icon">🧘</span>
                 <span class="tab-label">Nefes</span>
+            </button>
+            <button class="tab-item" data-tab="settings">
+                <span class="tab-icon">⚙️</span>
+                <span class="tab-label">Ayarlar</span>
             </button>
         </nav>
     </div>

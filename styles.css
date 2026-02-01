@@ -815,6 +815,70 @@ body {
     display: flex;
 }
 
+/* === Settings Tab Styles === */
+.settings-section {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.settings-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.settings-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.settings-desc:last-child {
+    margin-bottom: 0;
+}
+
+.btn-secondary {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--bg-card);
+    border-color: var(--accent-secondary);
+}
+
+.btn-secondary.success {
+    background: rgba(46, 213, 115, 0.15);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.install-instructions {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.install-instructions p {
+    font-size: 0.813rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.install-instructions p:last-child {
+    margin-bottom: 0;
+}
+
+.install-instructions strong {
+    color: var(--text-primary);
+}
+
 /* === Responsive === */
 @media (min-width: 500px) {
     body {

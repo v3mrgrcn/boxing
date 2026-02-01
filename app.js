@@ -313,43 +313,90 @@ function updatePlayButton(isPaused) {
     elements.playText.textContent = isPaused ? 'Devam' : 'Duraklat';
 }
 
+// === Combo Library (Based on ExpertBoxing + Custom) ===
+// 1=Jab, 2=Cross, 3=Lead Hook, 4=Rear Hook, 5=Lead Uppercut, 6=Rear Uppercut
+// Defense: slip, roll, pivot, duck, block
+const COMBO_LIBRARY = {
+    // Easy: Basic 2-3 punch combinations
+    easy: [
+        [1, 1],           // Jab-Jab
+        [1, 2],           // Jab-Cross
+        [1, 1, 2],        // Jab-Jab-Cross
+        [1, 2, 1],        // Jab-Cross-Jab
+        [2, 1],           // Cross-Jab
+        [1, 3],           // Jab-Hook
+        [1, 2, 3],        // Jab-Cross-Hook
+        [3, 2],           // Hook-Cross
+        [1, 6],           // Jab-Uppercut
+        [2, 3],           // Cross-Hook
+    ],
+    // Medium: Classic 3-5 punch combinations
+    medium: [
+        [1, 2, 1, 2],     // Jab-Cross-Jab-Cross
+        [1, 2, 3, 2],     // Jab-Cross-Hook-Cross (Classic)
+        [1, 6, 3, 2],     // Jab-Uppercut-Hook-Cross
+        [1, 2, 3, 4],     // Jab-Cross-Hook-Hook
+        [1, 2, 5, 2],     // Jab-Cross-Uppercut-Cross
+        [2, 3, 2],        // Cross-Hook-Cross
+        [1, 1, 2, 3],     // Double Jab-Cross-Hook
+        [5, 2, 3],        // Uppercut-Cross-Hook
+        [6, 3, 2],        // Rear Uppercut-Hook-Cross
+        [1, 2, 3, 6, 3],  // Jab-Cross-Hook-Uppercut-Hook
+        [3, 2, 1],        // Hook-Cross-Jab
+        [1, 3, 2],        // Jab-Hook-Cross (Tricky)
+        [4, 1, 2],        // Hook-Jab-Cross
+        [6, 5, 2, 1, 2],  // Uppercut-Uppercut-Cross-Jab-Cross
+        [1, 2, 3, 2, 1],  // 5-punch combo
+    ],
+    // Hard: Advanced combinations with defense moves
+    hard: [
+        [1, 2, 'slip', 1, 2],           // Jab-Cross-Slip-Jab-Cross
+        [1, 2, 'roll', 3, 2],           // Jab-Cross-Roll-Hook-Cross
+        [6, 5, 2, 1, 'pivot'],          // Infighting to pivot
+        [1, 'slip', 2, 3, 2],           // Jab-Slip-Cross-Hook-Cross
+        [1, 2, 3, 'roll', 3, 2, 3],     // Long combo with roll
+        [4, 3, 6, 1, 2, 3],             // Hook-Hook-Uppercut combo
+        [1, 2, 3, 4, 5, 6],             // Full combo
+        [1, 6, 3, 2, 'pivot'],          // Combo ending with pivot
+        [1, 1, 2, 'slip', 3, 2],        // Double jab with counter
+        [2, 'duck', 5, 2, 3],           // Cross-Duck-Uppercut-Cross-Hook
+        [1, 2, 'roll', 5, 6, 3, 2],     // Rolling uppercut combo
+        [6, 3, 'pivot', 1, 2],          // Infight then pivot out
+        [1, 2, 3, 2, 'slip', 1, 2],     // Long evasive combo
+        [3, 6, 3, 2, 1, 2],             // Hook-Uppercut power series
+        [1, 'duck', 6, 3, 2, 'pivot'],  // Full evasive combo
+    ]
+};
+
+// Track last used combos to avoid repetition
+let usedComboIndices = { easy: [], medium: [], hard: [] };
+
 // === Combo Generation ===
 function generateCombo() {
-    const difficultyConfig = {
-        easy: { min: 2, max: 3, defense: false },
-        medium: { min: 3, max: 5, defense: false },
-        hard: { min: 4, max: 8, defense: true }
-    };
+    const difficulty = state.difficulty;
+    const combos = COMBO_LIBRARY[difficulty];
 
-    const config = difficultyConfig[state.difficulty];
-    const length = Math.floor(Math.random() * (config.max - config.min + 1)) + config.min;
-    const combo = [];
-    let lastPunch = state.lastCombo[state.lastCombo.length - 1];
-
-    for (let i = 0; i < length; i++) {
-        let punch;
-        let attempts = 0;
-        do {
-            punch = Math.floor(Math.random() * 6) + 1;
-            attempts++;
-        } while (punch === lastPunch && attempts < 10);
-
-        combo.push(punch);
-        lastPunch = punch;
+    // Reset indices if we've used most combos
+    if (usedComboIndices[difficulty].length >= combos.length - 2) {
+        usedComboIndices[difficulty] = [];
     }
 
-    // Add defense move for hard mode (30% chance)
-    if (config.defense && Math.random() < 0.3) {
-        const defenseKeys = Object.keys(DEFENSE);
-        const defenseKey = defenseKeys[Math.floor(Math.random() * defenseKeys.length)];
-        combo.push({ type: 'defense', key: defenseKey });
-    }
+    // Pick a random unused combo
+    let comboIndex;
+    do {
+        comboIndex = Math.floor(Math.random() * combos.length);
+    } while (usedComboIndices[difficulty].includes(comboIndex));
 
+    usedComboIndices[difficulty].push(comboIndex);
+
+    const combo = combos[comboIndex];
     state.lastCombo = combo;
 
     // Display combo
     const displayParts = combo.map(p => {
-        if (typeof p === 'object') return DEFENSE[p.key].name;
+        if (typeof p === 'string') {
+            return DEFENSE[p]?.name || p;
+        }
         return state.announceMode === 'number' ? PUNCHES[p].number : PUNCHES[p].name;
     });
 
@@ -364,9 +411,13 @@ function generateCombo() {
 
 async function playComboAudio(combo) {
     for (const punch of combo) {
-        if (typeof punch === 'object') {
-            await audioManager.play(DEFENSE[punch.key].audio);
+        if (typeof punch === 'string') {
+            // Defense move
+            if (DEFENSE[punch]) {
+                await audioManager.play(DEFENSE[punch].audio);
+            }
         } else {
+            // Punch
             const audioFile = state.announceMode === 'number'
                 ? PUNCHES[punch].audioNum
                 : PUNCHES[punch].audioName;
@@ -825,8 +876,103 @@ function init() {
     // Preload audio
     audioManager.preload(essentialAudio);
 
+    // Register Service Worker for PWA
+    registerServiceWorker();
+
+    // Setup audio cache button
+    setupAudioCacheButton();
+
     console.log('🥊 Shadow Boxing App initialized');
+}
+
+// === PWA Service Worker Registration ===
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('./sw.js');
+            console.log('[PWA] Service Worker registered:', registration);
+
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+                console.log('[PWA] New version available');
+            });
+        } catch (error) {
+            console.warn('[PWA] Service Worker registration failed:', error);
+        }
+    }
+}
+
+// === Audio Cache Management ===
+function setupAudioCacheButton() {
+    const downloadBtn = document.getElementById('btn-download-audio');
+    if (!downloadBtn) return;
+
+    // Check current cache status
+    checkAudioCacheStatus();
+
+    downloadBtn.addEventListener('click', async () => {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<span class="btn-icon-inner">⏳</span><span>İndiriliyor...</span>';
+
+        try {
+            await cacheAllAudio();
+            downloadBtn.innerHTML = '<span class="btn-icon-inner">✓</span><span>İndirildi!</span>';
+            downloadBtn.classList.add('success');
+        } catch (error) {
+            console.error('Audio cache failed:', error);
+            downloadBtn.innerHTML = '<span class="btn-icon-inner">⚠</span><span>Hata!</span>';
+            downloadBtn.disabled = false;
+        }
+    });
+}
+
+async function checkAudioCacheStatus() {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+        return;
+    }
+
+    return new Promise((resolve) => {
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+            const { cached, total, complete } = event.data;
+            const downloadBtn = document.getElementById('btn-download-audio');
+            if (downloadBtn && complete) {
+                downloadBtn.innerHTML = '<span class="btn-icon-inner">✓</span><span>Çevrimdışı Hazır</span>';
+                downloadBtn.classList.add('success');
+                downloadBtn.disabled = true;
+            }
+            resolve(event.data);
+        };
+        navigator.serviceWorker.controller.postMessage(
+            { action: 'getAudioCacheStatus' },
+            [messageChannel.port2]
+        );
+    });
+}
+
+async function cacheAllAudio() {
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+        // Fallback: just preload all audio
+        await audioManager.preload(essentialAudio);
+        return;
+    }
+
+    return new Promise((resolve, reject) => {
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+            if (event.data.success) {
+                resolve();
+            } else {
+                reject(new Error(event.data.error));
+            }
+        };
+        navigator.serviceWorker.controller.postMessage(
+            { action: 'cacheAudio' },
+            [messageChannel.port2]
+        );
+    });
 }
 
 // Start app
 init();
+
