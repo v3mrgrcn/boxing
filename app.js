@@ -107,12 +107,12 @@ class HapticManager {
 
 // === Punch Dictionary ===
 const PUNCHES = {
-    1: { number: '1', name: 'Jab', audioNum: '1.mp3', audioName: 'jab.mp3' },
-    2: { number: '2', name: 'Cross', audioNum: '2.mp3', audioName: 'cross.mp3' },
-    3: { number: '3', name: 'Lead Hook', audioNum: '3.mp3', audioName: 'lead_hook.mp3' },
-    4: { number: '4', name: 'Rear Hook', audioNum: '4.mp3', audioName: 'rear_hook.mp3' },
-    5: { number: '5', name: 'Lead Uppercut', audioNum: '5.mp3', audioName: 'lead_uppercut.mp3' },
-    6: { number: '6', name: 'Rear Uppercut', audioNum: '6.mp3', audioName: 'rear_uppercut.mp3' }
+    1: { name: 'Jab', audio: 'jab.mp3' },
+    2: { name: 'Cross', audio: 'cross.mp3' },
+    3: { name: 'Lead Hook', audio: 'lead_hook.mp3' },
+    4: { name: 'Rear Hook', audio: 'rear_hook.mp3' },
+    5: { name: 'Lead Uppercut', audio: 'lead_uppercut.mp3' },
+    6: { name: 'Rear Uppercut', audio: 'rear_uppercut.mp3' }
 };
 
 const DEFENSE = {
@@ -164,7 +164,6 @@ const state = {
     timerInterval: null,
     comboInterval: null,
     difficulty: 'medium',
-    announceMode: 'number',
     comboIntervalMs: 6000,
     lastCombo: [],
 
@@ -223,7 +222,6 @@ const elements = {
 
     // Settings
     difficultyControl: document.getElementById('difficulty-control'),
-    announceControl: document.getElementById('announce-control'),
     roundDuration: document.getElementById('round-duration'),
     restDuration: document.getElementById('rest-duration'),
     roundCount: document.getElementById('round-count'),
@@ -275,10 +273,6 @@ function setupSegmentedControl(container, callback) {
 
 setupSegmentedControl(elements.difficultyControl, (value) => {
     state.difficulty = value;
-});
-
-setupSegmentedControl(elements.announceControl, (value) => {
-    state.announceMode = value;
 });
 
 // === Utility Functions ===
@@ -393,7 +387,7 @@ function generateCombo() {
         if (typeof p === 'string') {
             return DEFENSE[p]?.name || p;
         }
-        return state.announceMode === 'number' ? PUNCHES[p].number : PUNCHES[p].name;
+        return PUNCHES[p].name;
     });
 
     elements.comboDisplay.textContent = displayParts.join(' - ');
@@ -414,10 +408,7 @@ async function playComboAudio(combo) {
             }
         } else {
             // Punch
-            const audioFile = state.announceMode === 'number'
-                ? PUNCHES[punch].audioNum
-                : PUNCHES[punch].audioName;
-            await audioManager.play(audioFile);
+            await audioManager.play(PUNCHES[punch].audio);
         }
         await new Promise(r => setTimeout(r, 400)); // Gap between punches
     }
