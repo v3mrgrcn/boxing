@@ -665,6 +665,9 @@ function resyncTimer() {
 
 // === Event Listeners: Training ===
 elements.btnPlay.addEventListener('click', () => {
+    // Initialize audio on first interaction
+    audioManager.init();
+
     state.totalRounds = parseInt(elements.roundCount.value);
 
     switch (state.workoutState) {
@@ -724,6 +727,9 @@ elements.cyclePlus.addEventListener('click', () => {
 
 // === Breathing Exercise ===
 function startBreathing() {
+    // Initialize audio on first interaction
+    audioManager.init();
+
     if (state.breathingActive) {
         stopBreathing();
         return;
@@ -914,9 +920,14 @@ function setupAudioCacheButton() {
 }
 
 async function checkAudioCacheStatus() {
-    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+    if (!('serviceWorker' in navigator)) {
         return;
     }
+
+    const registration = await navigator.serviceWorker.ready;
+    const worker = registration.active || navigator.serviceWorker.controller;
+
+    if (!worker) return;
 
     return new Promise((resolve) => {
         const messageChannel = new MessageChannel();
@@ -930,7 +941,7 @@ async function checkAudioCacheStatus() {
             }
             resolve(event.data);
         };
-        navigator.serviceWorker.controller.postMessage(
+        worker.postMessage(
             { action: 'getAudioCacheStatus' },
             [messageChannel.port2]
         );
@@ -938,8 +949,15 @@ async function checkAudioCacheStatus() {
 }
 
 async function cacheAllAudio() {
-    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
-        // Fallback: just preload all audio
+    if (!('serviceWorker' in navigator)) {
+        await audioManager.preload(essentialAudio);
+        return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const worker = registration.active || navigator.serviceWorker.controller;
+
+    if (!worker) {
         await audioManager.preload(essentialAudio);
         return;
     }
@@ -953,7 +971,7 @@ async function cacheAllAudio() {
                 reject(new Error(event.data.error));
             }
         };
-        navigator.serviceWorker.controller.postMessage(
+        worker.postMessage(
             { action: 'cacheAudio' },
             [messageChannel.port2]
         );

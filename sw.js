@@ -9,8 +9,7 @@ const APP_SHELL = [
     './styles.css',
     './app.js',
     './manifest.json',
-    './icon-512.png',
-    './icon-192.png'
+    './icon-512.png'
 ];
 
 // Audio files to cache
@@ -100,18 +99,32 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Message handler for audio caching
-self.addEventListener('message', (event) => {
+self.addEventListener('message', async (event) => {
     if (event.data.action === 'cacheAudio') {
         console.log('[SW] Caching audio files...');
-        caches.open(AUDIO_CACHE_NAME).then((cache) => {
+        try {
+            const cache = await caches.open(AUDIO_CACHE_NAME);
             const audioUrls = AUDIO_FILES.map(file => `./${file}`);
-            return cache.addAll(audioUrls);
-        }).then(() => {
-            event.ports[0].postMessage({ success: true });
-        }).catch((error) => {
+
+            // Cache files one by one to avoid total failure if one is missing
+            const results = await Promise.allSettled(
+                audioUrls.map(url => cache.add(url))
+            );
+
+            const failed = results.filter(r => r.status === 'rejected');
+            if (failed.length > 0) {
+                console.warn(`[SW] Some audio files failed to cache:`, failed);
+            }
+
+            event.ports[0].postMessage({
+                success: true,
+                partial: failed.length > 0,
+                failedCount: failed.length
+            });
+        } catch (error) {
             console.error('[SW] Audio cache failed:', error);
             event.ports[0].postMessage({ success: false, error: error.message });
-        });
+        }
     }
 
     if (event.data.action === 'getAudioCacheStatus') {
