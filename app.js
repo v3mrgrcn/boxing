@@ -477,14 +477,12 @@ function updateTimer() {
         const prevSecond = Math.floor(remaining + 0.05);
 
         // Play countdown sounds
-        if (state.voiceEnabled && currentSecond !== prevSecond && currentSecond <= 10 && currentSecond >= 1) {
-            if (currentSecond === 10) {
+        if (state.voiceEnabled && currentSecond !== prevSecond) {
+            if (currentSecond === 9) {
                 audioManager.play('last_10_seconds.mp3', true);
-            } else if (currentSecond <= 3) {
-                // Play number countdown for last 3 seconds
-                audioManager.play(`${currentSecond}.mp3`, true);
-            } else {
-                // Play beep for 9-4 seconds
+            } else if (currentSecond <= 2 && currentSecond >= 0) {
+                audioManager.play(`${currentSecond + 1}.mp3`, true);
+            } else if (currentSecond < 9 && currentSecond > 2) {
                 audioManager.play('beep.mp3', true);
             }
         }
@@ -1127,6 +1125,12 @@ function runFreeRest() {
         remaining--;
         if (remaining >= 0) {
             elements.freeTimerValue.textContent = formatTime(remaining);
+        }
+
+        if (remaining <= 10 && remaining > 0 && state.voiceEnabled) {
+            if (remaining === 10) audioManager.play('last_10_seconds.mp3', true);
+            else if (remaining <= 3) audioManager.play(`${remaining}.mp3`, true);
+            else audioManager.play('beep.mp3', true);
         }
         if (remaining <= 0) {
             clearInterval(state.freeInterval);
