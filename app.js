@@ -1,35 +1,57 @@
 // === Shadow Boxing Web App ===
 // Production-ready with custom audio support
 
-// === Audio Manager ===
+// === Audio Manager (Low Latency Web Audio API) ===
 class AudioManager {
     constructor() {
-        this.audioCache = new Map();
-        this.currentAudio = null;
-        this.audioQueue = [];
-        this.isPlaying = false;
-        this.basePath = './'; // Audio files are in same directory
+        this.ctx = null;
+        this.bufferCache = new Map();
+        this.basePath = './';
+        this.isLocked = true;
+    }
+
+    // Initialize AudioContext on user interaction
+    init() {
+        if (this.ctx) return;
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        if (this.ctx.state === 'suspended') {
+            this.unlock();
+        }
+    }
+
+    async unlock() {
+        if (!this.ctx) return;
+        try {
+            await this.ctx.resume();
+            this.isLocked = false;
+            console.log('🔊 AudioContext unlocked and active');
+        } catch (e) {
+            console.warn('AudioContext unlock failed:', e);
+        }
     }
 
     async preload(files) {
+        this.init();
         const promises = files.map(file => this.load(file));
         await Promise.allSettled(promises);
     }
 
     async load(file) {
-        if (this.audioCache.has(file)) return this.audioCache.get(file);
+        if (this.bufferCache.has(file)) return this.bufferCache.get(file);
 
         try {
-            const audio = new Audio(`${this.basePath}${file}`);
-            audio.preload = 'auto';
+            const response = await fetch(`${this.basePath}${file}`);
+            const arrayBuffer = await response.arrayBuffer();
 
-            await new Promise((resolve, reject) => {
-                audio.addEventListener('canplaythrough', resolve, { once: true });
-                audio.addEventListener('error', reject, { once: true });
-            });
+            // Ensure context is initialized before decoding
+            this.init();
 
-            this.audioCache.set(file, audio);
-            return audio;
+            const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+            this.bufferCache.set(file, audioBuffer);
+            return audioBuffer;
         } catch (error) {
             console.warn(`Failed to load audio: ${file}`, error);
             return null;
@@ -37,56 +59,30 @@ class AudioManager {
     }
 
     async play(file, priority = false) {
-        if (priority && this.currentAudio) {
-            this.currentAudio.pause();
-            this.currentAudio.currentTime = 0;
-            this.isPlaying = false;
+        if (!this.ctx) this.init();
+        if (this.ctx.state === 'suspended') await this.unlock();
+
+        let buffer = this.bufferCache.get(file);
+        if (!buffer) {
+            buffer = await this.load(file);
         }
 
-        if (this.isPlaying && !priority) {
-            this.audioQueue.push(file);
-            return;
-        }
+        if (!buffer) return;
 
-        let audio = this.audioCache.get(file);
-        if (!audio) {
-            audio = await this.load(file);
-        }
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.ctx.destination);
 
-        if (!audio) return;
-
-        this.isPlaying = true;
-        this.currentAudio = audio.cloneNode();
-
-        this.currentAudio.addEventListener('ended', () => {
-            this.isPlaying = false;
-            this.currentAudio = null;
-            this.playNext();
-        }, { once: true });
-
-        try {
-            await this.currentAudio.play();
-        } catch (error) {
-            console.warn('Audio play failed:', error);
-            this.isPlaying = false;
-            this.playNext();
-        }
-    }
-
-    playNext() {
-        if (this.audioQueue.length > 0) {
-            const next = this.audioQueue.shift();
-            this.play(next);
-        }
+        // Return promise that resolves when sound ends
+        return new Promise(resolve => {
+            source.onended = resolve;
+            source.start(0);
+        });
     }
 
     stop() {
-        if (this.currentAudio) {
-            this.currentAudio.pause();
-            this.currentAudio.currentTime = 0;
-        }
-        this.audioQueue = [];
-        this.isPlaying = false;
+        // In Web Audio API, we usually stop specific nodes. 
+        // For simplicity, we just allow current buffers to finish or could implement a gain node to fade out.
     }
 }
 
