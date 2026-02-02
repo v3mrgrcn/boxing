@@ -13,9 +13,15 @@ class AudioManager {
     // Initialize AudioContext on user interaction
     init() {
         if (this.ctx) return;
-
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AudioContext();
+
+        // Play silent buffer to unlock audio on mobile
+        const buffer = this.ctx.createBuffer(1, 1, 22050);
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.ctx.destination);
+        source.start(0);
 
         if (this.ctx.state === 'suspended') {
             this.unlock();
@@ -166,6 +172,7 @@ const state = {
     difficulty: 'medium',
     comboIntervalMs: 6000,
     voiceEnabled: true,
+    singleComboMode: false,
     lastCombo: [],
 
     // Breathing
@@ -241,6 +248,7 @@ const elements = {
     restDuration: document.getElementById('rest-duration'),
     roundCount: document.getElementById('round-count'),
     comboIntervalSelect: document.getElementById('combo-interval'),
+    comboModeControl: document.getElementById('combo-mode-control'),
 
     // Breathing
     breathingRing: document.getElementById('breathing-ring'),
@@ -314,6 +322,10 @@ setupSegmentedControl(elements.difficultyControl, (value) => {
 
 setupSegmentedControl(elements.voiceControl, (value) => {
     state.voiceEnabled = (value === 'on');
+});
+
+setupSegmentedControl(elements.comboModeControl, (value) => {
+    state.singleComboMode = (value === 'single');
 });
 
 // === Utility Functions ===
@@ -476,8 +488,8 @@ function updateTimer() {
         const currentSecond = Math.floor(remaining);
         const prevSecond = Math.floor(remaining + 0.05);
 
-        // Play countdown sounds
-        if (state.voiceEnabled && currentSecond !== prevSecond) {
+        // Play countdown sounds (always enabled for timing)
+        if (currentSecond !== prevSecond) {
             if (currentSecond === 9) {
                 audioManager.play('last_10_seconds.mp3', true);
             } else if (currentSecond <= 2 && currentSecond >= 0) {
@@ -540,14 +552,16 @@ function startWorkPhase() {
     elements.stateBadge.textContent = `ROUND ${state.currentRound}`;
     elements.stateBadge.className = 'state-badge work';
     elements.roundCounter.textContent = `${state.currentRound} / ${state.totalRounds}`;
-    elements.comboHint.textContent = 'Kombo yakında...';
+    elements.comboHint.textContent = '';
 
     state.roundDuration = parseInt(elements.roundDuration.value);
     state.endDate = Date.now() + state.roundDuration * 1000;
 
-    // Play bell and round announcement
+    // Play bell (always enabled)
+    audioManager.play('bell_start.mp3', true);
+
+    // Play round announcement (voice enabled)
     if (state.voiceEnabled) {
-        audioManager.play('bell_start.mp3', true);
         setTimeout(() => {
             const roundAudio = `round_${state.currentRound}.mp3`;
             audioManager.play(roundAudio, true);
@@ -558,7 +572,9 @@ function startWorkPhase() {
     setTimeout(() => {
         if (state.workoutState === 'work') {
             generateCombo();
-            startComboInterval();
+            if (!state.singleComboMode) {
+                startComboInterval();
+            }
         }
     }, 2000);
 
@@ -605,9 +621,11 @@ function startRestPhase() {
     state.restDuration = parseInt(elements.restDuration.value);
     state.endDate = Date.now() + state.restDuration * 1000;
 
-    // Play bell end and rest announcement
+    // Play bell end (always)
+    audioManager.play('bell_end.mp3', true);
+
+    // Play rest announcement (voice enabled)
     if (state.voiceEnabled) {
-        audioManager.play('bell_end.mp3', true);
         setTimeout(() => {
             audioManager.play('rest.mp3', true);
         }, 600);
@@ -632,8 +650,9 @@ function finishWorkout() {
     elements.playText.textContent = 'Yeniden';
 
     // Play bell, workout complete, then victory sound
+    audioManager.play('bell_end.mp3', true);
+
     if (state.voiceEnabled) {
-        audioManager.play('bell_end.mp3', true);
         setTimeout(() => {
             audioManager.play('workout_complete.mp3', true);
             setTimeout(() => {
@@ -1074,8 +1093,10 @@ function runFreeWork() {
     let remaining = state.freeRoundDuration;
     elements.freeTimerValue.textContent = formatTime(remaining);
 
+    // Play bell (always)
+    audioManager.play('bell_start.mp3', true);
+
     if (state.voiceEnabled) {
-        audioManager.play('bell_start.mp3', true);
         setTimeout(() => {
             if (state.freeTimerActive && state.freeState === 'work') {
                 audioManager.play(`round_${state.freeRound}.mp3`, true);
@@ -1112,8 +1133,10 @@ function runFreeRest() {
     let remaining = state.freeRestDuration;
     elements.freeTimerValue.textContent = formatTime(remaining);
 
+    // Bell (always)
+    audioManager.play('bell_end.mp3', true);
+
     if (state.voiceEnabled) {
-        audioManager.play('bell_end.mp3', true);
         setTimeout(() => {
             if (state.freeTimerActive && state.freeState === 'rest') {
                 audioManager.play('rest.mp3', true);
